@@ -1,0 +1,12 @@
+[package]
+name = "timelog"
+version = "0.1.0"
+authors = ["Justin Browne <jebdude89@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = { version = "*", features = ["serde"] }
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+structopt = "*"
