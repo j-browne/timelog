@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 chrono = { version = "*", features = ["serde"] }
+itertools = "*"
 serde = "*"
 serde_json = "*"
 serde_derive = "*"
