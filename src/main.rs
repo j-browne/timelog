@@ -12,7 +12,7 @@ const LOGNAME: &str = "log.json";
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "timelog", author = "")]
-pub enum Opt {
+enum Opt {
     #[structopt(name = "print", author = "", about = "Print all log entries")]
     Print {},
     #[structopt(name = "start", author = "", about = "Create a new log entry")]
@@ -41,11 +41,9 @@ fn main() -> Result<()> {
         }
         Opt::Start {} => {
             let start = Local::now();
-            let stdin = io::stdin();
-            let mut stdin = stdin.lock();
-            let mut buf = Vec::new();
-            stdin.read_to_end(&mut buf)?;
-            let goal = String::from_utf8(buf)?;
+            println!("Type a goal for this entry. Use EOF (Ctrl-D) to finish.");
+
+            let goal = get_input()?;
 
             let new_entry = Entry {
                 start: Some(start),
@@ -57,15 +55,14 @@ fn main() -> Result<()> {
             write_entries(writer, entries)?;
         }
         Opt::Stop {} => {
-            let stop = Local::now();
-            let mut last_entry = entries.pop().ok_or("NoneError")?;
-            if last_entry.stop.is_none() {
-                let stdin = io::stdin();
-                let mut stdin = stdin.lock();
-                let mut buf = Vec::new();
-                stdin.read_to_end(&mut buf)?;
-                let result = String::from_utf8(buf)?;
+                let stop = Local::now();
+                let mut last_entry = entries.pop().ok_or("NoneError")?;
+                if last_entry.stop.is_none() {
+                println!("{}", last_entry);
+                println!();
+                println!("Type a result for this entry. Use EOF (Ctrl-D) to finish.");
 
+                let result = get_input()?;
                 last_entry.stop = Some(stop);
                 last_entry.result = result;
             } else {
@@ -78,12 +75,11 @@ fn main() -> Result<()> {
         }
         Opt::Note {} => {
             let mut last_entry = entries.pop().ok_or("NoneError")?;
-            let stdin = io::stdin();
-            let mut stdin = stdin.lock();
-            let mut buf = Vec::new();
-            stdin.read_to_end(&mut buf)?;
-            let note = String::from_utf8(buf)?;
+            println!("{}", last_entry);
+            println!();
+            println!("Type a note for this entry. Use EOF (Ctrl-D) to finish.");
 
+            let note = get_input()?;
             last_entry.notes.push(note);
             entries.push(last_entry);
 
@@ -113,3 +109,12 @@ fn get_file_writer(filename: &str) -> Result<BufWriter<File>> {
     let writer = File::create(filename);
     Ok(BufWriter::new(writer?))
 }
+
+fn get_input() -> Result<String> {
+    let stdin = io::stdin();
+    let mut stdin = stdin.lock();
+    let mut buf = Vec::new();
+    stdin.read_to_end(&mut buf)?;
+    Ok(String::from_utf8(buf)?)
+}
+
