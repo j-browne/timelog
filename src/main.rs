@@ -19,7 +19,11 @@ enum Opt {
     Start {},
     #[structopt(name = "stop", author = "", about = "Complete the latest log entry")]
     Stop {},
-    #[structopt(name = "note", author = "", about = "Add a note to the latest log entry")]
+    #[structopt(
+        name = "note",
+        author = "",
+        about = "Add a note to the latest log entry"
+    )]
     Note {},
 }
 
@@ -55,9 +59,9 @@ fn main() -> Result<()> {
             write_entries(writer, entries)?;
         }
         Opt::Stop {} => {
-                let stop = Local::now();
-                let mut last_entry = entries.pop().ok_or("NoneError")?;
-                if last_entry.stop.is_none() {
+            let stop = Local::now();
+            let mut last_entry = entries.pop().ok_or("NoneError")?;
+            if last_entry.stop.is_none() {
                 println!("{}", last_entry);
                 println!();
                 println!("Type a result for this entry. Use EOF (Ctrl-D) to finish.");
@@ -117,4 +121,3 @@ fn get_input() -> Result<String> {
     stdin.read_to_end(&mut buf)?;
     Ok(String::from_utf8(buf)?)
 }
-
