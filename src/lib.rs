@@ -65,7 +65,7 @@ fn fmt_option_title_pad<T: Display>(
     if let Some(right) = text {
         write!(s, "{}", right)?;
     } else {
-        writeln!(s, "--")?;
+        write!(s, "--")?;
     }
     Ok(s)
 }
