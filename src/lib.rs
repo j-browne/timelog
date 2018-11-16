@@ -49,8 +49,7 @@ fn fmt_str_title_pad(text: &str, title: &str, pad: usize) -> Result<String, fmt:
             EitherOrBoth::Left(left) => (left, ""),
             EitherOrBoth::Right(right) => ("", right),
         };
-        write!(s, "{:<width$}", left, width = pad)?;
-        write!(s, "{}", right)?;
+        write!(s, "{l:<width$}{r}", l = left, width = pad, r = right)?;
     }
 
     Ok(s)

@@ -8,11 +8,18 @@ use structopt::StructOpt;
 use timelog::{read_entries, write_entries, Entry};
 
 type Result<T> = std::result::Result<T, Box<Error>>;
-const LOGNAME: &str = "log.json";
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "timelog", author = "")]
-enum Opt {
+struct Opt {
+    #[structopt(short = "l", long = "log-file", default_value = "log.json")]
+    log_file: String,
+    #[structopt(subcommand)]
+    sub_command: SubCommand,
+}
+
+#[derive(Debug, StructOpt)]
+enum SubCommand {
     #[structopt(name = "print", author = "", about = "Print all log entries")]
     Print {},
     #[structopt(name = "start", author = "", about = "Create a new log entry")]
@@ -30,11 +37,11 @@ enum Opt {
 fn main() -> Result<()> {
     let opt = Opt::from_args();
 
-    let reader = get_file_reader(LOGNAME)?;
+    let reader = get_file_reader(&opt.log_file)?;
     let mut entries = read_entries(reader)?;
 
-    match opt {
-        Opt::Print {} => {
+    match opt.sub_command {
+        SubCommand::Print {} => {
             let entries = entries.into_sorted_vec();
             for (i, e) in entries.iter().enumerate() {
                 if i != 0 {
@@ -43,7 +50,7 @@ fn main() -> Result<()> {
                 println!("{}", e);
             }
         }
-        Opt::Start {} => {
+        SubCommand::Start {} => {
             let start = Local::now();
             println!("Type a goal for this entry. Use EOF (Ctrl-D) to finish.");
 
@@ -55,10 +62,10 @@ fn main() -> Result<()> {
                 ..Entry::default()
             };
             entries.push(new_entry);
-            let writer = get_file_writer(LOGNAME)?;
+            let writer = get_file_writer(&opt.log_file)?;
             write_entries(writer, entries)?;
         }
-        Opt::Stop {} => {
+        SubCommand::Stop {} => {
             let stop = Local::now();
             let mut last_entry = entries.pop().ok_or("NoneError")?;
             if last_entry.stop.is_none() {
@@ -74,10 +81,10 @@ fn main() -> Result<()> {
             }
             entries.push(last_entry);
 
-            let writer = get_file_writer(LOGNAME)?;
+            let writer = get_file_writer(&opt.log_file)?;
             write_entries(writer, entries)?;
         }
-        Opt::Note {} => {
+        SubCommand::Note {} => {
             let mut last_entry = entries.pop().ok_or("NoneError")?;
             println!("{}", last_entry);
             println!();
@@ -87,7 +94,7 @@ fn main() -> Result<()> {
             last_entry.notes.push(note);
             entries.push(last_entry);
 
-            let writer = get_file_writer(LOGNAME)?;
+            let writer = get_file_writer(&opt.log_file)?;
             write_entries(writer, entries)?;
         }
     }
