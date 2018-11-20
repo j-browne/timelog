@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, Duration};
 use itertools::{EitherOrBoth, Itertools};
 use std::{
     cmp::Ordering,
@@ -84,7 +84,7 @@ impl fmt::Display for Entry {
             St(&'a str),
         };
 
-        let duration = duration.map(|x| format!("{}m{}s", x.num_minutes(), x.num_seconds()));
+        let duration = duration.map(|x| format_dur(x));
         let mut to_output = vec![
             ("Start Time:", Data::OpDt(self.start)),
             ("Stop Time:", Data::OpDt(self.stop)),
@@ -131,4 +131,28 @@ pub fn write_entries<W: io::Write>(
     let entries = entries.into_sorted_vec();
     serde_json::to_writer_pretty(writer, &entries)?;
     Ok(())
+}
+
+pub fn format_dur(mut dur: Duration) -> String {
+    let mut out = String::new();
+    let d = dur.num_days();
+    if d != 0 {
+        out += &format!("{}d", d);
+        dur = dur - Duration::days(d);
+    }
+    let h = dur.num_hours();
+    if h != 0 {
+        out += &format!("{}h", h);
+        dur = dur - Duration::hours(h);
+    }
+    let m = dur.num_minutes();
+    if m != 0 {
+        out += &format!("{}m", m);
+        dur = dur - Duration::minutes(m);
+    }
+    let s = dur.num_seconds();
+    if s != 0 {
+        out += &format!("{}s", s);
+    }
+    out
 }

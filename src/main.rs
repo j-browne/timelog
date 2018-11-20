@@ -6,7 +6,7 @@ use std::{
     io::{self, BufReader, BufWriter, Read},
 };
 use structopt::StructOpt;
-use timelog::{read_entries, write_entries, Entry};
+use timelog::{read_entries, write_entries, Entry, format_dur};
 
 type Result<T> = std::result::Result<T, Box<Error>>;
 
@@ -27,6 +27,8 @@ enum SubCommand {
     Summary {
         #[structopt(short = "y", long = "yearly")]
         yearly: bool,
+        #[structopt(short = "m", long = "monthly")]
+        monthly: bool,
         #[structopt(short = "w", long = "weekly")]
         weekly: bool,
         #[structopt(short = "d", long = "daily")]
@@ -60,35 +62,69 @@ fn main() -> Result<()> {
                 println!("{}", e);
             }
         }
-        SubCommand::Summary {..} => {
-            let mut yearly = HashMap::new();
-            let mut monthly = HashMap::new();
-            let mut weekly = HashMap::new();
-            let mut daily = HashMap::new();
+        SubCommand::Summary { yearly, monthly, weekly, daily } => {
+            let mut years = HashMap::new();
+            let mut months = HashMap::new();
+            let mut weeks = HashMap::new();
+            let mut days = HashMap::new();
 
             for e in entries.iter() {
                 if let (Some(start), Some(stop)) = (e.start, e.stop) {
-                    let y = start.year();
-                    let m = start.month();
-                    let w = start.iso_week().week();
-                    let d = start.ordinal();
+                    let date = start.date();
                     let dur = stop - start;
 
-                    let entry = yearly.entry(y).or_insert(Duration::zero());
-                    *entry = *entry + dur;
-                    let entry = monthly.entry((y, m)).or_insert(Duration::zero());
-                    *entry = *entry + dur;
-                    let entry = weekly.entry((y, w)).or_insert(Duration::zero());
-                    *entry = *entry + dur;
-                    let entry = daily.entry((y, d)).or_insert(Duration::zero());
-                    *entry = *entry + dur;
+                    if yearly {
+                        let y = date.with_ordinal0(0).expect("with_ordinal0(0) caused an error");
+                        let entry = years.entry(y).or_insert(Duration::zero());
+                        *entry = *entry + dur;
+                    }
+                    if monthly {
+                        let m = date.with_day0(0).expect("with_day0(0) caused an error");
+                        let entry = months.entry(m).or_insert(Duration::zero());
+                        *entry = *entry + dur;
+                    }
+                    if weekly {
+                        let y = start.year();
+                        let w = start.iso_week().week();
+                        let entry = weeks.entry((y, w)).or_insert(Duration::zero());
+                        *entry = *entry + dur;
+                    }
+                    if daily {
+                        let entry = days.entry(date).or_insert(Duration::zero());
+                        *entry = *entry + dur;
+                    }
                 }
             }
 
-            println!("{:?}", yearly);
-            println!("{:?}", monthly);
-            println!("{:?}", weekly);
-            println!("{:?}", daily);
+            if yearly {
+                for (y, dur) in years {
+                    println!("{}: {}", y.format("%Y"), format_dur(dur));
+                }
+                if monthly || weekly || daily {
+                    println!();
+                }
+            }
+            if monthly {
+                for (m, dur) in months {
+                    println!("{}: {}", m.format("%B %Y"), format_dur(dur));
+                }
+                if weekly || daily {
+                    println!();
+                }
+            }
+            if weekly {
+                for ((y, w), dur) in weeks {
+                    println!("{}, Week {}: {}", y, w, format_dur(dur));
+                }
+                if daily {
+                    println!();
+                }
+            }
+            if daily {
+                for (d, dur) in days {
+                    println!("{}: {}", d.format("%v"), format_dur(dur));
+                }
+            }
         }
         SubCommand::Start {} => {
             let start = Local::now();
@@ -168,3 +204,4 @@ fn get_input() -> Result<String> {
     stdin.read_to_end(&mut buf)?;
     Ok(String::from_utf8(buf)?)
 }
+
