@@ -1,4 +1,4 @@
-use chrono::{Local, Duration, Datelike};
+use chrono::{Datelike, Duration, Local};
 use std::{
     collections::HashMap,
     error::Error,
@@ -6,7 +6,7 @@ use std::{
     io::{self, BufReader, BufWriter, Read},
 };
 use structopt::StructOpt;
-use timelog::{read_entries, write_entries, Entry, format_dur};
+use timelog::{format_dur, read_entries, write_entries, Entry};
 
 type Result<T> = std::result::Result<T, Box<Error>>;
 
@@ -23,7 +23,11 @@ struct Opt {
 enum SubCommand {
     #[structopt(name = "print", author = "", about = "Print all log entries")]
     Print {},
-    #[structopt(name = "summary", author = "", about = "Summarize time over certain time periods")]
+    #[structopt(
+        name = "summary",
+        author = "",
+        about = "Summarize time over certain time periods"
+    )]
     Summary {
         #[structopt(short = "y", long = "yearly")]
         yearly: bool,
@@ -62,7 +66,12 @@ fn main() -> Result<()> {
                 println!("{}", e);
             }
         }
-        SubCommand::Summary { yearly, monthly, weekly, daily } => {
+        SubCommand::Summary {
+            yearly,
+            monthly,
+            weekly,
+            daily,
+        } => {
             let mut years = HashMap::new();
             let mut months = HashMap::new();
             let mut weeks = HashMap::new();
@@ -74,7 +83,9 @@ fn main() -> Result<()> {
                     let dur = stop - start;
 
                     if yearly {
-                        let y = date.with_ordinal0(0).expect("with_ordinal0(0) caused an error");
+                        let y = date
+                            .with_ordinal0(0)
+                            .expect("with_ordinal0(0) caused an error");
                         let entry = years.entry(y).or_insert(Duration::zero());
                         *entry = *entry + dur;
                     }
@@ -204,4 +215,3 @@ fn get_input() -> Result<String> {
     stdin.read_to_end(&mut buf)?;
     Ok(String::from_utf8(buf)?)
 }
-

@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use chrono::{DateTime, Local, Duration};
+use chrono::{DateTime, Duration, Local};
 use itertools::{EitherOrBoth, Itertools};
 use std::{
     cmp::Ordering,
