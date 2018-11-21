@@ -3,6 +3,7 @@ use std::{
     collections::HashMap,
     error::Error,
     fs::File,
+    hash::Hash,
     io::{self, BufReader, BufWriter, Read},
 };
 use structopt::StructOpt;
@@ -108,7 +109,7 @@ fn main() -> Result<()> {
             }
 
             if yearly {
-                for (y, dur) in years {
+                for (y, dur) in sort_hash_map(years) {
                     println!("{}: {}", y.format("%Y"), format_dur(dur));
                 }
                 if monthly || weekly || daily {
@@ -116,7 +117,7 @@ fn main() -> Result<()> {
                 }
             }
             if monthly {
-                for (m, dur) in months {
+                for (m, dur) in sort_hash_map(months) {
                     println!("{}: {}", m.format("%B %Y"), format_dur(dur));
                 }
                 if weekly || daily {
@@ -124,7 +125,7 @@ fn main() -> Result<()> {
                 }
             }
             if weekly {
-                for ((y, w), dur) in weeks {
+                for ((y, w), dur) in sort_hash_map(weeks) {
                     println!("{}, Week {}: {}", y, w, format_dur(dur));
                 }
                 if daily {
@@ -132,7 +133,7 @@ fn main() -> Result<()> {
                 }
             }
             if daily {
-                for (d, dur) in days {
+                for (d, dur) in sort_hash_map(days) {
                     println!("{}: {}", d.format("%v"), format_dur(dur));
                 }
             }
@@ -214,4 +215,11 @@ fn get_input() -> Result<String> {
     let mut buf = Vec::new();
     stdin.read_to_end(&mut buf)?;
     Ok(String::from_utf8(buf)?)
+}
+
+fn sort_hash_map<K, V>(mut m: HashMap<K, V>) -> Vec<(K, V)> 
+    where K: Eq + Hash + Ord + Copy {
+    let mut v: Vec<(K, V)> = m.drain().collect();
+    v.sort_by_key(|x: &(K, V)| x.0);
+    v
 }
