@@ -6,39 +6,38 @@ use std::{
     hash::Hash,
     io::{self, BufReader, BufWriter, Read},
 };
-use structopt::StructOpt;
+use structopt::{
+    clap::{AppSettings, ArgGroup},
+    StructOpt,
+};
 use timelog::{format_dur, read_entries, write_entries, Entry};
 
 type Result<T> = std::result::Result<T, Box<Error>>;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "timelog", author = "")]
+#[structopt(
+    name = "timelog",
+    author = "",
+    raw(setting = "AppSettings::DeriveDisplayOrder")
+)]
 struct Opt {
-    #[structopt(short = "l", long = "log-file", default_value = "log.json")]
+    #[structopt(
+        short = "l",
+        long = "log-file",
+        default_value = "log.json",
+        help = "The log file to use",
+    )]
     log_file: String,
     #[structopt(subcommand)]
     sub_command: SubCommand,
 }
 
+fn time_arg_group() -> ArgGroup<'static> {
+    ArgGroup::with_name("time").required(true).multiple(true)
+}
+
 #[derive(Debug, StructOpt)]
 enum SubCommand {
-    #[structopt(name = "print", author = "", about = "Print all log entries")]
-    Print {},
-    #[structopt(
-        name = "summary",
-        author = "",
-        about = "Summarize time over certain time periods"
-    )]
-    Summary {
-        #[structopt(short = "y", long = "yearly")]
-        yearly: bool,
-        #[structopt(short = "m", long = "monthly")]
-        monthly: bool,
-        #[structopt(short = "w", long = "weekly")]
-        weekly: bool,
-        #[structopt(short = "d", long = "daily")]
-        daily: bool,
-    },
     #[structopt(name = "start", author = "", about = "Create a new log entry")]
     Start {},
     #[structopt(name = "stop", author = "", about = "Complete the latest log entry")]
@@ -49,6 +48,47 @@ enum SubCommand {
         about = "Add a note to the latest log entry"
     )]
     Note {},
+    #[structopt(name = "print", author = "", about = "Print all log entries")]
+    Print {},
+    #[structopt(
+        name = "summary",
+        author = "",
+        about = "Summarize time over certain time periods",
+        raw(
+            group = "time_arg_group()",
+            setting = "AppSettings::DeriveDisplayOrder",
+        ),
+    )]
+    Summary {
+        #[structopt(
+            short = "y",
+            long = "yearly",
+            group = "time",
+            help = "Prints yearly summaries",
+        )]
+        yearly: bool,
+        #[structopt(
+            short = "m",
+            long = "monthly",
+            group = "time",
+            help = "Prints monthly summaries",
+        )]
+        monthly: bool,
+        #[structopt(
+            short = "w",
+            long = "weekly",
+            group = "time",
+            help = "Prints weekly summaries",
+        )]
+        weekly: bool,
+        #[structopt(
+            short = "d",
+            long = "daily",
+            group = "time",
+            help = "Prints daily summaries",
+        )]
+        daily: bool,
+    },
 }
 
 fn main() -> Result<()> {
